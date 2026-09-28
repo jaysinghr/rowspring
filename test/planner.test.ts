@@ -137,4 +137,67 @@ describe('planSync', () => {
       },
     ]);
   });
+
+  test('updates a linked all-day event using a plain date, not a timestamp', () => {
+    const rows = [
+      {
+        rowIndex: 2,
+        eventId: 'evt-1',
+        title: 'Company holiday (renamed)',
+        allDay: true as const,
+        start: new Date('2026-12-25T00:00:00Z'),
+        end: new Date('2026-12-25T00:00:00Z'),
+      },
+    ];
+    const existingEvents = [
+      {
+        id: 'evt-1',
+        title: 'Company holiday',
+        allDay: true as const,
+        date: '2026-12-25',
+        start: new Date('2026-12-25T00:00:00Z'),
+        end: new Date('2026-12-25T00:00:00Z'),
+      },
+    ];
+
+    const plan = planSync(rows, existingEvents);
+
+    expect(plan.actions).toEqual([
+      {
+        type: 'update',
+        rowIndex: 2,
+        eventId: 'evt-1',
+        title: 'Company holiday (renamed)',
+        allDay: true,
+        date: '2026-12-25',
+      },
+    ]);
+  });
+
+  test('leaves an unchanged all-day event alone (no spurious timestamp mismatch)', () => {
+    const rows = [
+      {
+        rowIndex: 2,
+        eventId: 'evt-1',
+        title: 'Company holiday',
+        allDay: true as const,
+        start: new Date('2026-12-25T00:00:00Z'),
+        end: new Date('2026-12-25T00:00:00Z'),
+      },
+    ];
+    const existingEvents = [
+      {
+        id: 'evt-1',
+        title: 'Company holiday',
+        allDay: true as const,
+        date: '2026-12-25',
+        start: new Date('2026-12-25T00:00:00Z'),
+        end: new Date('2026-12-25T00:00:00Z'),
+      },
+    ];
+
+    const plan = planSync(rows, existingEvents);
+
+    expect(plan.actions).toEqual([]);
+  });
 });

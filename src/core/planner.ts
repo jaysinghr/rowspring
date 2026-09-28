@@ -13,6 +13,8 @@ export interface ExistingEvent {
   title: string;
   start: Date;
   end: Date;
+  allDay?: boolean;
+  date?: string;
 }
 
 export interface TimedCreateAction {
@@ -38,7 +40,7 @@ function toUtcDateString(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-export interface UpdateAction {
+export interface TimedUpdateAction {
   type: 'update';
   rowIndex: number;
   eventId: string;
@@ -46,6 +48,17 @@ export interface UpdateAction {
   start: Date;
   end: Date;
 }
+
+export interface AllDayUpdateAction {
+  type: 'update';
+  rowIndex: number;
+  eventId: string;
+  title: string;
+  allDay: true;
+  date: string;
+}
+
+export type UpdateAction = TimedUpdateAction | AllDayUpdateAction;
 
 export interface DeleteAction {
   type: 'delete';
@@ -60,11 +73,18 @@ export interface SyncPlan {
 }
 
 function fieldsMatch(row: SheetRow, event: ExistingEvent): boolean {
-  return (
-    row.title === event.title &&
-    row.start.getTime() === event.start.getTime() &&
-    row.end.getTime() === event.end.getTime()
-  );
+  if (row.title !== event.title) return false;
+
+  if (row.allDay || event.allDay) {
+    // Compare calendar dates, never raw timestamps: a date and a
+    // midnight-UTC instant can represent the same day but must never be
+    // treated as mismatched (or matched) via a timezone-sensitive getTime().
+    const rowDate = toUtcDateString(row.start);
+    const eventDate = event.date ?? toUtcDateString(event.start);
+    return Boolean(row.allDay) === Boolean(event.allDay) && rowDate === eventDate;
+  }
+
+  return row.start.getTime() === event.start.getTime() && row.end.getTime() === event.end.getTime();
 }
 
 export function planSync(rows: SheetRow[], existingEvents: ExistingEvent[]): SyncPlan {
@@ -106,14 +126,25 @@ export function planSync(rows: SheetRow[], existingEvents: ExistingEvent[]): Syn
     }
 
     if (linkedEvent) {
-      actions.push({
-        type: 'update',
-        rowIndex: row.rowIndex,
-        eventId: row.eventId,
-        title: row.title,
-        start: row.start,
-        end: row.end,
-      });
+      actions.push(
+        row.allDay
+          ? {
+              type: 'update',
+              rowIndex: row.rowIndex,
+              eventId: row.eventId,
+              title: row.title,
+              allDay: true,
+              date: toUtcDateString(row.start),
+            }
+          : {
+              type: 'update',
+              rowIndex: row.rowIndex,
+              eventId: row.eventId,
+              title: row.title,
+              start: row.start,
+              end: row.end,
+            },
+      );
     }
   }
 
