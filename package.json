@@ -5,9 +5,12 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:addon": "esbuild src/bundle.ts --bundle --format=iife --global-name=Rowspring --outfile=addon/Core.generated.js --target=es2019",
+    "push": "npm run build:addon && cd addon && clasp push"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"
   }
