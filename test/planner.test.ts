@@ -109,4 +109,32 @@ describe('planSync', () => {
       { type: 'delete', rowIndex: 2, eventId: 'evt-1' },
     ]);
   });
+
+  test('creates an all-day event using a plain date, not a timestamp', () => {
+    // All-day events must never carry a time-of-day. A midnight timestamp
+    // shifts by a day once it crosses a timezone boundary (the #4 complaint
+    // in the marketplace review scan: "01/01/20 comes with 31/12/19 date").
+    const rows = [
+      {
+        rowIndex: 2,
+        eventId: null,
+        title: 'Company holiday',
+        allDay: true as const,
+        start: new Date('2026-12-25T00:00:00Z'),
+        end: new Date('2026-12-25T00:00:00Z'),
+      },
+    ];
+
+    const plan = planSync(rows, []);
+
+    expect(plan.actions).toEqual([
+      {
+        type: 'create',
+        rowIndex: 2,
+        title: 'Company holiday',
+        allDay: true,
+        date: '2026-12-25',
+      },
+    ]);
+  });
 });

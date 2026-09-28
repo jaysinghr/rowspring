@@ -5,6 +5,7 @@ export interface SheetRow {
   start: Date;
   end: Date;
   status?: 'DELETE';
+  allDay?: boolean;
 }
 
 export interface ExistingEvent {
@@ -14,12 +15,27 @@ export interface ExistingEvent {
   end: Date;
 }
 
-export interface CreateAction {
+export interface TimedCreateAction {
   type: 'create';
   rowIndex: number;
   title: string;
   start: Date;
   end: Date;
+}
+
+export interface AllDayCreateAction {
+  type: 'create';
+  rowIndex: number;
+  title: string;
+  allDay: true;
+  date: string;
+}
+
+export type CreateAction = TimedCreateAction | AllDayCreateAction;
+
+/** Formats a Date's UTC calendar date as YYYY-MM-DD, with no time-of-day. */
+function toUtcDateString(date: Date): string {
+  return date.toISOString().slice(0, 10);
 }
 
 export interface UpdateAction {
@@ -64,13 +80,23 @@ export function planSync(rows: SheetRow[], existingEvents: ExistingEvent[]): Syn
     }
 
     if (row.eventId === null) {
-      actions.push({
-        type: 'create',
-        rowIndex: row.rowIndex,
-        title: row.title,
-        start: row.start,
-        end: row.end,
-      });
+      actions.push(
+        row.allDay
+          ? {
+              type: 'create',
+              rowIndex: row.rowIndex,
+              title: row.title,
+              allDay: true,
+              date: toUtcDateString(row.start),
+            }
+          : {
+              type: 'create',
+              rowIndex: row.rowIndex,
+              title: row.title,
+              start: row.start,
+              end: row.end,
+            },
+      );
       continue;
     }
 
