@@ -50,6 +50,30 @@ describe('planSync', () => {
     expect(plan.actions).toEqual([]);
   });
 
+  test('recreates an event when its stored id no longer exists in Calendar', () => {
+    const rows = [
+      {
+        rowIndex: 2,
+        eventId: 'stale-event-id',
+        title: 'Team standup',
+        start: new Date('2026-10-01T09:00:00Z'),
+        end: new Date('2026-10-01T09:30:00Z'),
+      },
+    ];
+
+    const plan = planSync(rows, []);
+
+    expect(plan.actions).toEqual([
+      {
+        type: 'create',
+        rowIndex: 2,
+        title: 'Team standup',
+        start: new Date('2026-10-01T09:00:00Z'),
+        end: new Date('2026-10-01T09:30:00Z'),
+      },
+    ]);
+  });
+
   test('updates the linked event when a row field has changed', () => {
     const rows = [
       {
@@ -132,6 +156,32 @@ describe('planSync', () => {
         type: 'create',
         rowIndex: 2,
         title: 'Company holiday',
+        allDay: true,
+        date: '2026-12-25',
+      },
+    ]);
+  });
+
+  test('uses the supplied spreadsheet-timezone formatter for all-day dates', () => {
+    const rows = [
+      {
+        rowIndex: 2,
+        eventId: null,
+        title: 'India holiday',
+        allDay: true as const,
+        // Midnight in Asia/Kolkata is still the previous UTC date.
+        start: new Date('2026-12-24T18:30:00Z'),
+        end: new Date('2026-12-24T18:30:00Z'),
+      },
+    ];
+
+    const plan = planSync(rows, [], () => '2026-12-25');
+
+    expect(plan.actions).toEqual([
+      {
+        type: 'create',
+        rowIndex: 2,
+        title: 'India holiday',
         allDay: true,
         date: '2026-12-25',
       },

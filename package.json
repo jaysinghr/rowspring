@@ -7,7 +7,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "build:addon": "esbuild src/bundle.ts --bundle --format=iife --global-name=Rowspring --outfile=addon/Core.generated.js --target=es2019",
-    "push": "npm run build:addon && cd addon && clasp push"
+    "verify:addon": "npm run build:addon && node scripts/verify-addon.mjs",
+    "check": "npm test && npm run typecheck && npm run verify:addon",
+    "push": "npm run check && cd addon && clasp push"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

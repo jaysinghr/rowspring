@@ -21,7 +21,7 @@ function rowspringDateStringToLocalDate(dateStr) {
 }
 
 function rowspringGetCalendar() {
-  return CalendarApp.getDefaultCalendar();
+  return rowspringGetSelectedCalendar();
 }
 
 function rowspringCreateEvent(action) {
@@ -72,7 +72,7 @@ function rowspringGetExistingEvents(eventIds) {
         id: eventId,
         title: event.getTitle(),
         allDay: true,
-        date: Utilities.formatDate(event.getAllDayStartDate(), Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+        date: Utilities.formatDate(event.getAllDayStartDate(), calendar.getTimeZone(), 'yyyy-MM-dd'),
         start: event.getAllDayStartDate(),
         end: event.getAllDayEndDate(),
       });

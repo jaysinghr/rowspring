@@ -1,0 +1,458 @@
+<!doctype html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      :root {
+        --ink: #17223b;
+        --muted: #62707d;
+        --paper: #f4f8f6;
+        --surface: #ffffff;
+        --spring: #1f9d68;
+        --spring-dark: #14764e;
+        --line: #dce7e1;
+        --warning: #9b6412;
+        --danger: #b9404a;
+        --shadow: 0 12px 30px rgba(23, 34, 59, 0.09);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Segoe UI", Arial, sans-serif;
+        font-size: 14px;
+      }
+
+      button, select { font: inherit; }
+      button, summary, select { -webkit-tap-highlight-color: transparent; }
+
+      .shell { min-height: 100vh; padding: 22px 17px 28px; }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+
+      .mark {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 2px;
+        padding: 4px;
+        border-radius: 8px;
+        background: var(--ink);
+        box-shadow: var(--shadow);
+      }
+
+      .mark span { border-radius: 2px; background: #fff; opacity: 0.92; }
+      .mark span:last-child { background: #51d49a; }
+
+      .brand-name {
+        font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
+        font-size: 20px;
+        font-weight: 720;
+        letter-spacing: -0.6px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--spring-dark);
+        font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 245px;
+        margin: 0;
+        font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
+        font-size: 27px;
+        font-weight: 720;
+        letter-spacing: -1px;
+        line-height: 1.08;
+      }
+
+      .intro { margin: 10px 0 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+      .rail {
+        position: relative;
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        row-gap: 15px;
+        margin-bottom: 14px;
+        padding: 16px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .rail-line {
+        position: absolute;
+        top: 35px;
+        bottom: 35px;
+        left: 36px;
+        width: 2px;
+        background: var(--line);
+      }
+
+      .rail-pulse {
+        position: absolute;
+        top: 38px;
+        left: 33px;
+        width: 8px;
+        height: 8px;
+        border: 2px solid var(--surface);
+        border-radius: 50%;
+        background: var(--spring);
+        opacity: 0;
+      }
+
+      body.is-syncing .rail-pulse { opacity: 1; animation: travel 1.35s ease-in-out infinite; }
+
+      .node {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--paper);
+        color: var(--spring-dark);
+        font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .node.calendar { background: var(--ink); color: #fff; }
+      .rail-copy { align-self: center; min-width: 0; padding-left: 10px; }
+      .rail-label { margin: 0 0 3px; font-size: 13px; font-weight: 700; }
+      .rail-value { margin: 0; overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+
+      .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+      .metric { padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, 0.65); }
+      .metric strong { display: block; margin-bottom: 2px; font-size: 21px; letter-spacing: -0.5px; }
+      .metric span { color: var(--muted); font-size: 11px; }
+
+      .primary, .secondary {
+        width: 100%;
+        min-height: 44px;
+        padding: 11px 15px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 740;
+        transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease;
+      }
+
+      .primary { border: 0; background: var(--spring); color: #fff; box-shadow: 0 8px 18px rgba(31, 157, 104, 0.22); }
+      .primary:hover { background: var(--spring-dark); transform: translateY(-1px); }
+      .primary:active, .secondary:active { transform: translateY(0); }
+      .primary:disabled, .secondary:disabled { cursor: not-allowed; opacity: 0.58; transform: none; box-shadow: none; }
+
+      .secondary { border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+      .secondary:hover { border-color: #bbcec4; background: #fbfdfc; }
+
+      .primary:focus-visible, .secondary:focus-visible, select:focus-visible, summary:focus-visible {
+        outline: 3px solid rgba(31, 157, 104, 0.25);
+        outline-offset: 2px;
+      }
+
+      .primary.is-busy::after, .secondary.is-busy::after {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        margin-left: 8px;
+        border: 2px solid rgba(255, 255, 255, 0.45);
+        border-top-color: currentColor;
+        border-radius: 50%;
+        vertical-align: -2px;
+        content: "";
+        animation: spin 700ms linear infinite;
+      }
+
+      .result {
+        min-height: 58px;
+        margin-top: 11px;
+        padding: 11px 12px;
+        border-left: 3px solid var(--line);
+        border-radius: 2px 10px 10px 2px;
+        background: rgba(255, 255, 255, 0.58);
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .result strong { display: block; margin-bottom: 2px; color: var(--ink); font-size: 12px; }
+      .result span { white-space: pre-line; }
+      .result.success { border-left-color: var(--spring); }
+      .result.warning { border-left-color: var(--warning); }
+      .result.error { border-left-color: var(--danger); }
+      .result.error strong { color: var(--danger); }
+
+      details { margin-top: 16px; border-top: 1px solid var(--line); }
+      summary { padding: 15px 1px 10px; cursor: pointer; font-size: 12px; font-weight: 750; list-style: none; }
+      summary::-webkit-details-marker { display: none; }
+      summary::after { float: right; color: var(--muted); content: "+"; font-family: ui-monospace, monospace; font-size: 16px; font-weight: 400; }
+      details[open] summary::after { content: "−"; }
+
+      .field { margin: 0 0 13px; }
+      .field label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 700; }
+      select { width: 100%; height: 39px; padding: 0 30px 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); }
+      select:disabled { color: var(--muted); opacity: 0.76; }
+      .field-note { margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.4; }
+
+      .activity {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--line);
+      }
+
+      .activity-copy { min-width: 0; }
+      .activity-label { margin: 0 0 3px; font-size: 11px; font-weight: 700; }
+      .activity-time { margin: 0; overflow: hidden; color: var(--muted); font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+      .text-button { flex: 0 0 auto; padding: 5px 0; border: 0; background: transparent; color: var(--spring-dark); cursor: pointer; font-size: 11px; font-weight: 750; }
+      .text-button:hover { text-decoration: underline; }
+
+      .footer { margin: 18px 0 0; color: var(--muted); font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 9px; line-height: 1.45; }
+
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes travel { 0% { transform: translateY(0); } 50% { transform: translateY(41px); } 100% { transform: translateY(0); } }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <div class="brand" aria-label="Rowspring">
+        <div class="mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+        <div class="brand-name">Rowspring</div>
+      </div>
+
+      <p class="eyebrow">Sheet → calendar</p>
+      <h1>Your rows, arriving on time.</h1>
+      <p class="intro">Create, update, and remove calendar events from one reliable sheet.</p>
+
+      <section class="rail" aria-label="Sync connection">
+        <div class="rail-line" aria-hidden="true"></div>
+        <div class="rail-pulse" aria-hidden="true"></div>
+        <div class="node" aria-hidden="true">R</div>
+        <div class="rail-copy">
+          <p class="rail-label">Events sheet</p>
+          <p class="rail-value" id="sheetName">Checking connection…</p>
+        </div>
+        <div class="node calendar" aria-hidden="true">C</div>
+        <div class="rail-copy">
+          <p class="rail-label">Calendar</p>
+          <p class="rail-value" id="calendarName">Checking access…</p>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Sheet status">
+        <div class="metric"><strong id="rowCount">—</strong><span>event rows</span></div>
+        <div class="metric"><strong id="linkedCount">—</strong><span>calendar-linked</span></div>
+      </section>
+
+      <button class="primary" id="primaryButton" type="button" disabled>Checking Rowspring</button>
+      <div class="result" id="result" role="status" aria-live="polite">
+        <strong>Checking your workspace</strong>
+        <span>Rowspring is loading the sheet and calendar settings.</span>
+      </div>
+
+      <details id="settingsPanel">
+        <summary>Settings</summary>
+        <div class="field">
+          <label for="calendarSelect">Calendar</label>
+          <select id="calendarSelect"></select>
+          <p class="field-note" id="calendarNote">Choose where Rowspring creates events.</p>
+        </div>
+        <div class="field">
+          <label for="scheduleSelect">Automatic sync</label>
+          <select id="scheduleSelect">
+            <option value="0">Off</option>
+            <option value="15">Every 15 minutes</option>
+            <option value="30">Every 30 minutes</option>
+            <option value="60">Every hour</option>
+          </select>
+          <p class="field-note">Google may run scheduled syncs a few minutes after the selected interval.</p>
+        </div>
+        <button class="secondary" id="saveButton" type="button">Save settings</button>
+      </details>
+
+      <div class="activity">
+        <div class="activity-copy">
+          <p class="activity-label">Last activity</p>
+          <p class="activity-time" id="lastRun">No sync activity yet</p>
+        </div>
+        <button class="text-button" id="logButton" type="button">Open log</button>
+      </div>
+
+      <p class="footer" id="timezone">Spreadsheet timezone: —</p>
+    </main>
+
+    <script>
+      var appState = null;
+      var primaryButton = document.getElementById('primaryButton');
+      var saveButton = document.getElementById('saveButton');
+      var result = document.getElementById('result');
+      var activeButton = null;
+      var activeButtonLabel = '';
+
+      function setResult(title, detail, state) {
+        result.className = 'result' + (state ? ' ' + state : '');
+        result.querySelector('strong').textContent = title;
+        result.querySelector('span').textContent = detail;
+      }
+
+      function setBusy(button, label) {
+        activeButton = button;
+        activeButtonLabel = button.textContent;
+        button.disabled = true;
+        button.classList.add('is-busy');
+        button.textContent = label;
+      }
+
+      function clearBusy() {
+        document.body.classList.remove('is-syncing');
+        if (!activeButton) return;
+        activeButton.classList.remove('is-busy');
+        activeButton.textContent = activeButtonLabel;
+        activeButton.disabled = false;
+        activeButton = null;
+      }
+
+      function formatRunTime(timestamp) {
+        if (!timestamp) return 'No sync activity yet';
+        var date = new Date(timestamp);
+        return Number.isNaN(date.getTime()) ? timestamp : date.toLocaleString();
+      }
+
+      function fillCalendars(state) {
+        var select = document.getElementById('calendarSelect');
+        select.textContent = '';
+        state.calendars.forEach(function (calendar) {
+          var option = document.createElement('option');
+          option.value = calendar.id;
+          option.textContent = calendar.name + (calendar.isDefault ? ' — default' : '');
+          option.selected = calendar.id === state.selectedCalendarId;
+          select.appendChild(option);
+        });
+        select.disabled = state.calendarLocked;
+        document.getElementById('calendarNote').textContent = state.calendarLocked
+          ? 'Calendar locked while event rows are linked.'
+          : 'Choose where Rowspring creates events.';
+      }
+
+      function applyState(state, preserveResult) {
+        appState = state;
+        document.getElementById('sheetName').textContent = state.spreadsheetName;
+        document.getElementById('calendarName').textContent = state.selectedCalendarName;
+        document.getElementById('rowCount').textContent = String(state.rowCount);
+        document.getElementById('linkedCount').textContent = String(state.linkedCount);
+        document.getElementById('scheduleSelect').value = String(state.autoSyncMinutes);
+        document.getElementById('timezone').textContent = 'Spreadsheet timezone: ' + state.timezone;
+        document.getElementById('lastRun').textContent = state.lastRun ? formatRunTime(state.lastRun.timestamp) : 'No sync activity yet';
+        fillCalendars(state);
+
+        primaryButton.disabled = !state.ready && !state.setupAvailable;
+        primaryButton.textContent = state.setupAvailable ? 'Set up Rowspring' : (state.ready ? 'Sync calendar' : 'Fix Events sheet');
+        saveButton.disabled = false;
+
+        if (!preserveResult) {
+          setResult(
+            state.ready ? 'Connection ready' : (state.setupAvailable ? 'Setup available' : 'Sheet needs attention'),
+            state.message,
+            state.ready ? 'success' : (state.setupAvailable ? 'warning' : 'error')
+          );
+        }
+      }
+
+      function handleFailure(error) {
+        clearBusy();
+        if (appState) applyState(appState, true);
+        setResult('Action stopped', error && error.message ? error.message : String(error), 'error');
+      }
+
+      function refreshState(preserveResult) {
+        google.script.run
+          .withSuccessHandler(function (state) { applyState(state, preserveResult); })
+          .withFailureHandler(handleFailure)
+          .getRowspringAppState();
+      }
+
+      primaryButton.addEventListener('click', function () {
+        if (!appState) return;
+        if (appState.setupAvailable) {
+          setBusy(primaryButton, 'Setting up');
+          setResult('Preparing your sheet', 'Adding headers, formatting, controls, and an activity log.', '');
+          google.script.run
+            .withSuccessHandler(function (state) {
+              clearBusy();
+              applyState(state, true);
+              setResult('Rowspring is ready', 'The Events and Log sheets are prepared.', 'success');
+            })
+            .withFailureHandler(handleFailure)
+            .setupRowspring();
+          return;
+        }
+
+        if (!appState.ready) return;
+        setBusy(primaryButton, 'Syncing');
+        document.body.classList.add('is-syncing');
+        setResult('Sync in progress', 'Comparing your rows with the selected calendar.', '');
+        google.script.run
+          .withSuccessHandler(function (outcome) {
+            clearBusy();
+            setResult(
+              outcome.errors ? 'Sync finished with errors' : (outcome.queued ? 'Sync will continue' : 'Calendar is up to date'),
+              outcome.message,
+              outcome.errors ? 'warning' : 'success'
+            );
+            refreshState(true);
+          })
+          .withFailureHandler(handleFailure)
+          .syncNow();
+      });
+
+      saveButton.addEventListener('click', function () {
+        setBusy(saveButton, 'Saving');
+        google.script.run
+          .withSuccessHandler(function (state) {
+            clearBusy();
+            applyState(state, true);
+            setResult('Settings saved', 'Calendar and automatic sync preferences are active.', 'success');
+          })
+          .withFailureHandler(handleFailure)
+          .saveRowspringSettings({
+            calendarId: document.getElementById('calendarSelect').value,
+            autoSyncMinutes: Number(document.getElementById('scheduleSelect').value),
+          });
+      });
+
+      document.getElementById('logButton').addEventListener('click', function () {
+        google.script.run.withFailureHandler(handleFailure).openRowspringLog();
+      });
+
+      refreshState(false);
+    </script>
+  </body>
+</html>

@@ -1,12 +1,24 @@
-export interface SheetRow {
+export interface ActiveSheetRow {
   rowIndex: number;
   eventId: string | null;
   title: string;
   start: Date;
   end: Date;
-  status?: 'DELETE';
+  status?: undefined;
   allDay?: boolean;
 }
+
+export interface DeleteSheetRow {
+  rowIndex: number;
+  eventId: string;
+  title: string;
+  status: 'DELETE';
+  start?: Date;
+  end?: Date;
+  allDay?: boolean;
+}
+
+export type SheetRow = ActiveSheetRow | DeleteSheetRow;
 
 export interface ExistingEvent {
   id: string;
@@ -40,6 +52,8 @@ function toUtcDateString(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+export type DateFormatter = (date: Date) => string;
+
 export interface TimedUpdateAction {
   type: 'update';
   rowIndex: number;
@@ -72,22 +86,26 @@ export interface SyncPlan {
   actions: SyncAction[];
 }
 
-function fieldsMatch(row: SheetRow, event: ExistingEvent): boolean {
+function fieldsMatch(row: ActiveSheetRow, event: ExistingEvent, formatDate: DateFormatter): boolean {
   if (row.title !== event.title) return false;
 
   if (row.allDay || event.allDay) {
     // Compare calendar dates, never raw timestamps: a date and a
     // midnight-UTC instant can represent the same day but must never be
     // treated as mismatched (or matched) via a timezone-sensitive getTime().
-    const rowDate = toUtcDateString(row.start);
-    const eventDate = event.date ?? toUtcDateString(event.start);
+    const rowDate = formatDate(row.start);
+    const eventDate = event.date ?? formatDate(event.start);
     return Boolean(row.allDay) === Boolean(event.allDay) && rowDate === eventDate;
   }
 
   return row.start.getTime() === event.start.getTime() && row.end.getTime() === event.end.getTime();
 }
 
-export function planSync(rows: SheetRow[], existingEvents: ExistingEvent[]): SyncPlan {
+export function planSync(
+  rows: SheetRow[],
+  existingEvents: ExistingEvent[],
+  formatDate: DateFormatter = toUtcDateString,
+): SyncPlan {
   const eventsById = new Map(existingEvents.map((event) => [event.id, event]));
   const actions: SyncAction[] = [];
 
@@ -107,7 +125,7 @@ export function planSync(rows: SheetRow[], existingEvents: ExistingEvent[]): Syn
               rowIndex: row.rowIndex,
               title: row.title,
               allDay: true,
-              date: toUtcDateString(row.start),
+              date: formatDate(row.start),
             }
           : {
               type: 'create',
@@ -121,11 +139,32 @@ export function planSync(rows: SheetRow[], existingEvents: ExistingEvent[]): Syn
     }
 
     const linkedEvent = eventsById.get(row.eventId);
-    if (linkedEvent && fieldsMatch(row, linkedEvent)) {
+    if (linkedEvent && fieldsMatch(row, linkedEvent, formatDate)) {
       continue;
     }
 
-    if (linkedEvent) {
+    if (!linkedEvent) {
+      // The event may have been deleted directly in Calendar. Recreate it
+      // and let writeback replace the stale id so the row becomes linked
+      // again instead of remaining permanently stuck.
+      actions.push(
+        row.allDay
+          ? {
+              type: 'create',
+              rowIndex: row.rowIndex,
+              title: row.title,
+              allDay: true,
+              date: formatDate(row.start),
+            }
+          : {
+              type: 'create',
+              rowIndex: row.rowIndex,
+              title: row.title,
+              start: row.start,
+              end: row.end,
+            },
+      );
+    } else {
       actions.push(
         row.allDay
           ? {
@@ -134,7 +173,7 @@ export function planSync(rows: SheetRow[], existingEvents: ExistingEvent[]): Syn
               eventId: row.eventId,
               title: row.title,
               allDay: true,
-              date: toUtcDateString(row.start),
+              date: formatDate(row.start),
             }
           : {
               type: 'update',

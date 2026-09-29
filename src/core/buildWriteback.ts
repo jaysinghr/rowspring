@@ -12,6 +12,7 @@ export interface LogRow {
 
 export interface Writeback {
   eventIdWrites: { rowIndex: number; eventId: string }[];
+  deletedRowClears: number[];
   logRows: LogRow[];
 }
 
@@ -30,11 +31,12 @@ export function buildWriteback(plan: SyncPlan, result: ApplyPlanResult, now: () 
   const createdByRow = new Map(result.createdEventIds.map((c) => [c.rowIndex, c.eventId]));
 
   const eventIdWrites: Writeback['eventIdWrites'] = [...result.createdEventIds];
+  const deletedRowClears: number[] = [];
   const logRows: LogRow[] = plan.actions.map((action) => {
     const errorMessage = errorsByRow.get(action.rowIndex);
 
     if (action.type === 'delete' && errorMessage === undefined) {
-      eventIdWrites.push({ rowIndex: action.rowIndex, eventId: '' });
+      deletedRowClears.push(action.rowIndex);
     }
 
     if (errorMessage !== undefined) {
@@ -59,5 +61,5 @@ export function buildWriteback(plan: SyncPlan, result: ApplyPlanResult, now: () 
     };
   });
 
-  return { eventIdWrites, logRows };
+  return { eventIdWrites, deletedRowClears, logRows };
 }

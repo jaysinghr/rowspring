@@ -24,6 +24,7 @@ describe('buildWriteback', () => {
     const writeback = buildWriteback(plan, result, () => new Date('2026-09-28T12:00:00Z'));
 
     expect(writeback.eventIdWrites).toEqual([{ rowIndex: 2, eventId: 'evt-new' }]);
+    expect(writeback.deletedRowClears).toEqual([]);
     expect(writeback.logRows).toEqual([
       {
         timestamp: '2026-09-28T12:00:00.000Z',
@@ -54,6 +55,7 @@ describe('buildWriteback', () => {
     const writeback = buildWriteback(plan, result, () => new Date('2026-09-28T12:00:00Z'));
 
     expect(writeback.eventIdWrites).toEqual([]);
+    expect(writeback.deletedRowClears).toEqual([]);
     expect(writeback.logRows).toEqual([
       {
         timestamp: '2026-09-28T12:00:00.000Z',
@@ -66,7 +68,7 @@ describe('buildWriteback', () => {
     ]);
   });
 
-  test('clears the event id cell after a successful delete', () => {
+  test('clears the managed row cells after a successful delete', () => {
     const plan: SyncPlan = {
       actions: [{ type: 'delete', rowIndex: 4, eventId: 'evt-2' }],
     };
@@ -74,7 +76,8 @@ describe('buildWriteback', () => {
 
     const writeback = buildWriteback(plan, result, () => new Date('2026-09-28T12:00:00Z'));
 
-    expect(writeback.eventIdWrites).toEqual([{ rowIndex: 4, eventId: '' }]);
+    expect(writeback.eventIdWrites).toEqual([]);
+    expect(writeback.deletedRowClears).toEqual([4]);
     expect(writeback.logRows).toEqual([
       {
         timestamp: '2026-09-28T12:00:00.000Z',
@@ -99,6 +102,7 @@ describe('buildWriteback', () => {
     const writeback = buildWriteback(plan, result, () => new Date('2026-09-28T12:00:00Z'));
 
     expect(writeback.eventIdWrites).toEqual([]);
+    expect(writeback.deletedRowClears).toEqual([]);
     expect(writeback.logRows).toEqual([
       {
         timestamp: '2026-09-28T12:00:00.000Z',
