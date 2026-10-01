@@ -164,34 +164,17 @@ for (const id of ['primaryButton', 'calendarSelect', 'scheduleSelect', 'saveButt
 
 const manifest = JSON.parse(fs.readFileSync(path.join(addon, 'appsscript.json'), 'utf8'));
 for (const scope of [
-  'https://www.googleapis.com/auth/calendar',
-  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+  'https://www.googleapis.com/auth/spreadsheets.currentonly',
   'https://www.googleapis.com/auth/script.container.ui',
   'https://www.googleapis.com/auth/script.scriptapp',
 ]) {
   assert.ok(manifest.oauthScopes.includes(scope), `Manifest scope is missing: ${scope}`);
 }
 
-console.log('Apps Script runtime contract: ok');
-
-// Cancelled (user-deleted) events must be treated as missing.
-{
-  const live = { id: 'live' };
-  const cal = { getId: () => 'cal', getEventById: (id) => (id === 'none@google.com' ? null : live) };
-  context.Calendar = {
-    Events: {
-      get(calendarId, id) {
-        assert.equal(calendarId, 'cal');
-        if (id === 'gone') return { status: 'cancelled' };
-        if (id === 'missing') throw new Error('API call to calendar.events.get failed with error: Not Found');
-        if (id === 'boom') throw new Error('Quota exceeded');
-        return { status: 'confirmed' };
-      },
-    },
-  };
-  assert.equal(context.rowspringFindActiveEvent(cal, 'ok@google.com'), live);
-  assert.equal(context.rowspringFindActiveEvent(cal, 'gone@google.com'), null);
-  assert.equal(context.rowspringFindActiveEvent(cal, 'missing@google.com'), null);
-  assert.equal(context.rowspringFindActiveEvent(cal, 'none@google.com'), null);
-  assert.throws(() => context.rowspringFindActiveEvent(cal, 'boom@google.com'), /Quota/);
+for (const broad of ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/spreadsheets']) {
+  assert.ok(!manifest.oauthScopes.includes(broad), `Manifest must not request the broad scope: ${broad}`);
 }
+
+console.log('Apps Script runtime contract: ok');

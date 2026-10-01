@@ -7,7 +7,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "build:addon": "esbuild src/bundle.ts --bundle --format=iife --global-name=Rowspring --outfile=addon/Core.generated.js --target=es2019",
-    "verify:addon": "npm run build:addon && node scripts/verify-addon.mjs",
+    "verify:addon": "npm run build:addon && node scripts/verify-addon.mjs && node scripts/verify-calendar-client.mjs",
     "check": "npm test && npm run typecheck && npm run verify:addon",
     "push": "npm run check && cd addon && clasp push"
   },

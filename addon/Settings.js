@@ -129,24 +129,40 @@ function rowspringGetConfiguredCalendarId() {
   return rowspringGetProperties().getProperty(ROWSPRING_PROPERTY_KEYS.calendarId);
 }
 
-function rowspringGetSelectedCalendar() {
+function rowspringListOwnedCalendars() {
+  var entries = [];
+  var pageToken;
+  do {
+    var page = Calendar.CalendarList.list({ minAccessRole: 'owner', pageToken: pageToken });
+    entries = entries.concat(page.items || []);
+    pageToken = page.nextPageToken;
+  } while (pageToken);
+  return entries.filter(function (entry) { return entry.accessRole === 'owner'; });
+}
+
+function rowspringGetPrimaryCalendarId() {
+  return Calendar.CalendarList.get('primary').id;
+}
+
+/** The calendar ID events are written to; throws if the choice vanished. */
+function rowspringResolveCalendarId() {
   var configuredId = rowspringGetConfiguredCalendarId();
-  if (!configuredId) return CalendarApp.getDefaultCalendar();
-  var calendar = CalendarApp.getCalendarById(configuredId);
-  if (!calendar) {
+  if (!configuredId) return rowspringGetPrimaryCalendarId();
+  var found = rowspringListOwnedCalendars().some(function (entry) { return entry.id === configuredId; });
+  if (!found) {
     throw new Error('The selected calendar is no longer available. Choose another calendar in Rowspring settings.');
   }
-  return calendar;
+  return configuredId;
 }
 
 function rowspringListCalendars() {
-  var defaultId = CalendarApp.getDefaultCalendar().getId();
-  return CalendarApp.getAllOwnedCalendars()
-    .map(function (calendar) {
+  var defaultId = rowspringGetPrimaryCalendarId();
+  return rowspringListOwnedCalendars()
+    .map(function (entry) {
       return {
-        id: calendar.getId(),
-        name: calendar.getName(),
-        isDefault: calendar.getId() === defaultId,
+        id: entry.id,
+        name: entry.summaryOverride || entry.summary || entry.id,
+        isDefault: entry.id === defaultId,
       };
     })
     .sort(function (a, b) {
@@ -187,7 +203,7 @@ function saveRowspringSettings(settings) {
     var selected = calendars.filter(function (calendar) { return calendar.id === settings.calendarId; })[0];
     if (!selected) throw new Error('Rowspring can only sync to a calendar you own.');
 
-    var currentId = rowspringGetConfiguredCalendarId() || CalendarApp.getDefaultCalendar().getId();
+    var currentId = rowspringGetConfiguredCalendarId() || rowspringGetPrimaryCalendarId();
     var currentCalendarAvailable = calendars.some(function (calendar) { return calendar.id === currentId; });
     if (settings.calendarId !== currentId && currentCalendarAvailable && rowspringCountLinkedRows(spreadsheet) > 0) {
       throw new Error('The calendar is locked while Event IDs are linked. Delete or clear those event rows before switching calendars.');
@@ -263,7 +279,7 @@ function getRowspringAppState() {
   var status = rowspringBuildSheetStatus(spreadsheet);
   var calendars = rowspringListCalendars();
   var configuredCalendarId = rowspringGetConfiguredCalendarId();
-  var selectedCalendarId = configuredCalendarId || CalendarApp.getDefaultCalendar().getId();
+  var selectedCalendarId = configuredCalendarId || rowspringGetPrimaryCalendarId();
   var selectedCalendar = calendars.filter(function (calendar) { return calendar.id === selectedCalendarId; })[0];
   var autoSyncMinutes = Number(rowspringGetProperties().getProperty(ROWSPRING_PROPERTY_KEYS.autoSyncMinutes) || '0');
 
