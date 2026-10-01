@@ -24,6 +24,25 @@ function rowspringGetCalendar() {
   return rowspringGetSelectedCalendar();
 }
 
+/**
+ * CalendarApp.getEventById() still resolves events the user deleted in
+ * Calendar (they linger as cancelled). The Advanced Calendar service exposes
+ * the real status, so a cancelled event is treated as missing.
+ */
+function rowspringFindActiveEvent(calendar, eventId) {
+  var event = calendar.getEventById(eventId);
+  if (!event) return null;
+  try {
+    var remote = Calendar.Events.get(calendar.getId(), eventId.replace(/@google\.com$/, ''));
+    if (remote.status === 'cancelled') return null;
+  } catch (error) {
+    var message = String(error && error.message ? error.message : error);
+    if (/not found|deleted|\b(404|410)\b/i.test(message)) return null;
+    throw error;
+  }
+  return event;
+}
+
 function rowspringCreateEvent(action) {
   var calendar = rowspringGetCalendar();
   var event = action.allDay
@@ -34,7 +53,7 @@ function rowspringCreateEvent(action) {
 
 function rowspringUpdateEvent(action) {
   var calendar = rowspringGetCalendar();
-  var event = calendar.getEventById(action.eventId);
+  var event = rowspringFindActiveEvent(calendar, action.eventId);
   if (!event) {
     throw new Error('Event not found: ' + action.eventId);
   }
@@ -48,7 +67,7 @@ function rowspringUpdateEvent(action) {
 
 function rowspringDeleteEvent(eventId) {
   var calendar = rowspringGetCalendar();
-  var event = calendar.getEventById(eventId);
+  var event = rowspringFindActiveEvent(calendar, eventId);
   if (event) {
     event.deleteEvent();
   }
@@ -65,7 +84,7 @@ function rowspringGetExistingEvents(eventIds) {
   var calendar = rowspringGetCalendar();
   var events = [];
   eventIds.forEach(function (eventId) {
-    var event = calendar.getEventById(eventId);
+    var event = rowspringFindActiveEvent(calendar, eventId);
     if (!event) return;
     if (event.isAllDayEvent()) {
       events.push({
