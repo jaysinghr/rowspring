@@ -17,7 +17,7 @@
   "addOns": {
     "common": {
       "name": "Rowspring",
-      "logoUrl": "REPLACE_WITH_PUBLIC_URL/assets/rowspring-128.png",
+      "logoUrl": "https://jaysinghr.github.io/rowspring/assets/rowspring-128.png",
       "layoutProperties": { "primaryColor": "#17223b", "secondaryColor": "#1f9d68" },
       "useLocaleFromApp": true
     },

@@ -4,8 +4,8 @@ Public name: Rowspring. Support: rowspring.app@gmail.com.
 
 Assets in the repo:
 
-- `site/` — static site: `index.html`, `privacy.html`, `terms.html`, `assets/rowspring-{32,128,512}.png`. Host it at a public HTTPS URL.
-- `production/appsscript.json` — add-on manifest. Replace `REPLACE_WITH_PUBLIC_URL` with the hosted site URL before pushing to the production project.
+- `site/` — static site: `index.html`, `privacy.html`, `terms.html`, `assets/rowspring-{32,128,512}.png`. A GitHub Pages workflow publishes it at `https://jaysinghr.github.io/rowspring/`.
+- `production/appsscript.json` — add-on manifest configured to use the public GitHub Pages logo.
 - `scripts/make-logo.mjs` — regenerates the icons (`node scripts/make-logo.mjs`).
 
 Dev stays bound to the dev sheet via `addon/.clasp.json`. Production must be a **standalone** Apps Script project (not container-bound) for the Marketplace.
