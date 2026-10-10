@@ -69,7 +69,7 @@ With a linked Event ID present, open Settings. Confirm the calendar selector is 
 
 ## 9. Automatic sync
 
-1. Set Automatic sync to **Every 15 minutes** and save.
+1. Set Automatic sync to **Every hour** and save.
 2. Add a new valid row without clicking Sync.
 3. Allow for Google's trigger scheduling window and confirm the event is created automatically.
 4. Confirm Last activity and Log update.

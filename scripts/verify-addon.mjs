@@ -66,12 +66,11 @@ for (const exportName of ['planSync', 'runChunk', 'applyPlan', 'readSheetRows', 
 }
 assert.equal('Rowspring' in context.Rowspring, false, 'Bundle API must not be nested');
 
-context.rowspringConfigureAutoSync(15);
-assert.equal(triggers.length, 1);
-assert.deepEqual(triggers[0].record, { handler: 'rowspringScheduledSync', cadence: 'minutes', value: 15 });
 context.rowspringConfigureAutoSync(60);
-assert.equal(triggers.length, 1, 'Changing schedules must replace the previous trigger');
+assert.equal(triggers.length, 1);
 assert.deepEqual(triggers[0].record, { handler: 'rowspringScheduledSync', cadence: 'hours', value: 1 });
+context.rowspringConfigureAutoSync(60);
+assert.equal(triggers.length, 1, 'Reconfiguring must replace the previous trigger');
 context.rowspringConfigureAutoSync(0);
 assert.equal(triggers.length, 0, 'Turning automatic sync off must remove its trigger');
 

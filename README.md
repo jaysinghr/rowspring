@@ -8,7 +8,7 @@ Open the spreadsheet and use **Rowspring → Open sidebar**.
 
 - **Set up Rowspring** creates and formats the `Events` and `Log` sheets when needed.
 - **Sync calendar** compares every valid row with Calendar and applies only necessary changes.
-- **Settings** selects an owned calendar and optionally enables sync every 15 minutes, 30 minutes, or hour.
+- **Settings** selects an owned calendar and optionally enables hourly sync.
 - **Open log** shows the per-action audit trail.
 
 The Events sheet uses these exact columns:

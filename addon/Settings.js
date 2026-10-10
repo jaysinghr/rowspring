@@ -17,7 +17,8 @@ var ROWSPRING_PROPERTY_KEYS = {
   autoSyncMinutes: 'ROWSPRING_AUTO_SYNC_MINUTES',
   lastRun: 'ROWSPRING_LAST_RUN',
 };
-var ROWSPRING_ALLOWED_SYNC_MINUTES = [0, 15, 30, 60];
+// Add-on triggers cannot recur more often than hourly.
+var ROWSPRING_ALLOWED_SYNC_MINUTES = [0, 60];
 
 function rowspringGetProperties() {
   return PropertiesService.getDocumentProperties() || PropertiesService.getScriptProperties();
@@ -179,9 +180,7 @@ function rowspringDeleteTriggers(handlerFunction) {
 
 function rowspringConfigureAutoSync(minutes) {
   rowspringDeleteTriggers('rowspringScheduledSync');
-  if (minutes === 15 || minutes === 30) {
-    ScriptApp.newTrigger('rowspringScheduledSync').timeBased().everyMinutes(minutes).create();
-  } else if (minutes === 60) {
+  if (minutes === 60) {
     ScriptApp.newTrigger('rowspringScheduledSync').timeBased().everyHours(1).create();
   }
   rowspringGetProperties().setProperty(ROWSPRING_PROPERTY_KEYS.autoSyncMinutes, String(minutes));
